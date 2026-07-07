@@ -73,7 +73,7 @@ Create the project skeleton inside `web/` so all subsequent tasks have a buildab
 
 ## Task #2: Implement Authentication (Clerk)
 
-**Status:** Pending
+**Status:** Done
 **Blocked by:** #1
 
 ### Goal
@@ -98,15 +98,15 @@ Protect the app with individual user accounts via Clerk. No one can access chat 
 - Updated `.env.example` with Clerk keys
 
 ### Tests / Acceptance Criteria
-- [ ] Visiting `/chat` while signed out redirects to `/sign-in`
-- [ ] Can sign up via Clerk's hosted UI (email/password or social)
-- [ ] Can sign in with existing credentials
-- [ ] After sign-in, session persists across page refreshes (Clerk handles cookies)
-- [ ] Sign-out clears session and redirects to `/sign-in`
-- [ ] `requireAuth()` returns the Clerk `userId` for downstream use
-- [ ] A local `users` row is created on first authenticated request (clerk_id stored)
-- [ ] User A cannot access User B's data (isolation uses clerk_id, not session tricks)
-- [ ] App still builds and starts with no Clerk keys set (graceful error page, not crash)
+- [x] Visiting `/chat` while signed out redirects to `/sign-in`
+- [x] Can sign up via Clerk's hosted UI (email/password or social)
+- [x] Can sign in with existing credentials
+- [x] After sign-in, session persists across page refreshes (Clerk handles cookies)
+- [x] Sign-out clears session and redirects to `/sign-in`
+- [x] `requireAuth()` returns the Clerk `userId` for downstream use
+- [x] A local `users` row is created on first authenticated request (clerk_id stored)
+- [x] User A cannot access User B's data (isolation uses clerk_id, not session tricks)
+- [x] App still builds and starts with no Clerk keys set (graceful error page, not crash)
 
 ---
 
