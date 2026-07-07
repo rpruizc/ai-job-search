@@ -86,6 +86,13 @@ export function ChatClient() {
     };
     setMessages((prev) => [...prev, userMessage]);
 
+    const streamingMessage: Message = {
+      id: Date.now() + 1,
+      role: "assistant",
+      content: "",
+      created_at: new Date().toISOString(),
+    };
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -97,27 +104,86 @@ export function ChatClient() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to send message");
+        const data = await res.json();
+        throw new Error(data.error || "Failed to send message");
       }
 
-      const data = await res.json();
+      setMessages((prev) => [...prev, streamingMessage]);
 
-      if (!activeConversationId) {
-        setActiveConversationId(data.conversationId);
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6);
+          try {
+            const event = JSON.parse(json);
+
+            if (event.type === "text") {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last.role === "assistant") {
+                  updated[updated.length - 1] = { ...last, content: last.content + event.text };
+                }
+                return updated;
+              });
+            } else if (event.type === "done") {
+              if (!activeConversationId) {
+                setActiveConversationId(event.conversationId);
+              }
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last.role === "assistant") {
+                  updated[updated.length - 1] = { ...last, id: event.messageId };
+                }
+                return updated;
+              });
+              fetchConversations();
+            } else if (event.type === "error") {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last.role === "assistant") {
+                  updated[updated.length - 1] = { ...last, content: event.error };
+                }
+                return updated;
+              });
+            }
+          } catch {
+            // skip malformed SSE lines
+          }
+        }
       }
-
-      setMessages((prev) => [...prev, data.message]);
-      fetchConversations();
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: "Something went wrong. Please try again.",
-          created_at: new Date().toISOString(),
-        },
-      ]);
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : "Something went wrong. Please try again.";
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && last.content === "") {
+          const updated = [...prev];
+          updated[updated.length - 1] = { ...last, content: errorMsg };
+          return updated;
+        }
+        return [
+          ...prev,
+          {
+            id: Date.now() + 2,
+            role: "assistant",
+            content: errorMsg,
+            created_at: new Date().toISOString(),
+          },
+        ];
+      });
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +194,7 @@ export function ChatClient() {
       <header className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 sm:hidden"
             aria-label="Toggle sidebar"

@@ -18,5 +18,7 @@ CREATE TABLE IF NOT EXISTS messages (
   conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

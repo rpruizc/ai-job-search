@@ -26,5 +26,14 @@ export function getDb(): Database.Database {
     }
   }
 
+  const columns = db.pragma("table_info(messages)") as { name: string }[];
+  const colNames = columns.map((c) => c.name);
+  if (!colNames.includes("input_tokens")) {
+    db.exec("ALTER TABLE messages ADD COLUMN input_tokens INTEGER");
+  }
+  if (!colNames.includes("output_tokens")) {
+    db.exec("ALTER TABLE messages ADD COLUMN output_tokens INTEGER");
+  }
+
   return db;
 }

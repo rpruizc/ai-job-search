@@ -34,27 +34,34 @@ export function MessageThread({ messages, isLoading }: MessageThreadProps) {
     );
   }
 
+  const lastMessage = messages[messages.length - 1];
+  const showLoadingDots =
+    isLoading && (!lastMessage || lastMessage.role === "user" || lastMessage.content === "");
+
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto max-w-3xl space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+        {messages.map((msg) => {
+          if (msg.role === "assistant" && msg.content === "") return null;
+          return (
             <div
-              className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-800"
-              }`}
+              key={msg.id}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              {msg.content}
+              <div
+                className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {msg.content}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
-        {isLoading && (
+        {showLoadingDots && (
           <div className="flex justify-start">
             <div className="rounded-lg bg-gray-100 px-4 py-2.5">
               <div className="flex items-center gap-1.5">

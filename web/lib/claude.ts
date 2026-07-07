@@ -1,6 +1,7 @@
 import {
   BedrockRuntimeClient,
   InvokeModelCommand,
+  InvokeModelWithResponseStreamCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 
 export const MODEL_ID = "us.anthropic.claude-opus-4-6-v1";
@@ -52,4 +53,56 @@ export async function chat(
 
   const res = await bedrockClient.send(command);
   return JSON.parse(new TextDecoder().decode(res.body)) as ClaudeResponse;
+}
+
+export interface StreamCallbacks {
+  onText: (text: string) => void;
+  onComplete: (usage: { input_tokens: number; output_tokens: number }) => void;
+  onError: (error: Error) => void;
+}
+
+export async function chatStream(
+  messages: Message[],
+  options: { system?: string; maxTokens?: number },
+  callbacks: StreamCallbacks
+): Promise<void> {
+  const body = JSON.stringify({
+    anthropic_version: "bedrock-2023-05-31",
+    max_tokens: options?.maxTokens ?? 4096,
+    ...(options?.system && { system: options.system }),
+    messages,
+  });
+
+  const command = new InvokeModelWithResponseStreamCommand({
+    modelId: MODEL_ID,
+    contentType: "application/json",
+    accept: "application/json",
+    body: Buffer.from(body),
+  });
+
+  const res = await bedrockClient.send(command);
+
+  if (!res.body) {
+    callbacks.onError(new Error("No response body from Bedrock"));
+    return;
+  }
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  for await (const event of res.body) {
+    if (event.chunk?.bytes) {
+      const data = JSON.parse(new TextDecoder().decode(event.chunk.bytes));
+
+      if (data.type === "content_block_delta" && data.delta?.type === "text_delta") {
+        callbacks.onText(data.delta.text);
+      } else if (data.type === "message_start" && data.message?.usage) {
+        inputTokens = data.message.usage.input_tokens;
+      } else if (data.type === "message_delta" && data.usage) {
+        outputTokens = data.usage.output_tokens;
+      }
+    }
+  }
+
+  callbacks.onComplete({ input_tokens: inputTokens, output_tokens: outputTokens });
 }

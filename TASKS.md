@@ -112,7 +112,7 @@ Protect the app with individual user accounts via Clerk. No one can access chat 
 
 ## Task #3: Build the Chat UI
 
-**Status:** Pending
+**Status:** Done
 **Blocked by:** #1, #2
 
 ### Goal
@@ -152,7 +152,7 @@ Create the conversation interface that users will interact with. This is the pri
 
 ## Task #4: Integrate Claude API
 
-**Status:** Pending
+**Status:** Done
 **Blocked by:** #3
 
 ### Goal
@@ -160,34 +160,29 @@ Replace the mock echo with real Claude responses. The app becomes a functional A
 
 ### Inputs
 - Chat UI and message storage from Task #3
-- `ANTHROPIC_API_KEY` environment variable
+- `AWS_BEARER_TOKEN_BEDROCK` environment variable (Bedrock bearer token auth)
 - System prompt assembled from skill files (job-application-assistant role definition)
-- Decision: Use Anthropic SDK with streaming
-- Decision: Model `claude-sonnet-4-20250514` (good balance of cost/quality for multi-user)
+- Decision: AWS Bedrock InvokeModel with bearer token auth (same as Claude Code uses)
+- Decision: Model `us.anthropic.claude-opus-4-6-v1` (only model currently accessible)
 
-### Outputs
-- `lib/claude.ts` — Anthropic client wrapper, system prompt loader, streaming helper
-- `lib/system-prompt.ts` — reads and assembles the system prompt from skill files on disk
-- Updated `POST /api/chat`:
-  - Loads conversation history (last N messages for context window management)
-  - Calls Claude API with streaming enabled
-  - Streams response tokens to the frontend via ReadableStream / SSE
-  - Stores the final assistant message in DB
-- Frontend updates:
-  - Tokens appear incrementally as they arrive (typewriter effect)
-  - Loading indicator while waiting for first token
-  - Error state if API call fails (shows friendly message, not stack trace)
-- Token counting: store `input_tokens` and `output_tokens` per message (from API response)
+### Implementation
+- `lib/claude.ts` — Bedrock client with bearer token auth, `chat()` (sync) and `chatStream()` (SSE) helpers
+- `lib/system-prompt.ts` — assembles system prompt from skill files on disk (candidate profile, behavioral, writing style, job evaluation)
+- `POST /api/chat` — streams response tokens via SSE (ReadableStream), loads last 50 messages for context, stores token usage
+- `ChatClient` — reads SSE stream, renders tokens incrementally as they arrive
+- `MessageThread` — shows loading dots until first token, then renders streaming content
+- DB: `input_tokens` and `output_tokens` columns added to `messages` table (with migration for existing DBs)
+- Missing API key returns 503 with clear error message; rate limit errors shown as "Please try again in a moment"
 
 ### Tests / Acceptance Criteria
-- [ ] Sending a message produces a real Claude response (not echo)
-- [ ] Response streams token-by-token (not all at once after delay)
-- [ ] Conversation history is sent as context (Claude remembers earlier messages)
-- [ ] Context window is managed (old messages trimmed if conversation is very long)
-- [ ] Missing API key shows a clear error on the chat page (not a crash)
-- [ ] API rate limit errors are caught and shown as "Please try again in a moment"
-- [ ] Token usage is recorded per message in the DB
-- [ ] System prompt includes the job-application-assistant role and instructions
+- [x] Sending a message produces a real Claude response (not echo)
+- [x] Response streams token-by-token (not all at once after delay)
+- [x] Conversation history is sent as context (Claude remembers earlier messages)
+- [x] Context window is managed (old messages trimmed if conversation is very long)
+- [x] Missing API key shows a clear error on the chat page (not a crash)
+- [x] API rate limit errors are caught and shown as "Please try again in a moment"
+- [x] Token usage is recorded per message in the DB
+- [x] System prompt includes the job-application-assistant role and instructions
 
 ---
 
