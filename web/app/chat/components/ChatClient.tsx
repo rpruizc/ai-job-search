@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { Sidebar } from "./Sidebar";
 import { MessageThread } from "./MessageThread";
 import { ChatInput } from "./ChatInput";
@@ -205,7 +206,15 @@ export function ChatClient() {
           </button>
           <h1 className="text-lg font-semibold">AI Job Search</h1>
         </div>
-        <UserButton />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/profile"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            Profile
+          </Link>
+          <UserButton />
+        </div>
       </header>
 
       <div className="flex min-h-0 flex-1">

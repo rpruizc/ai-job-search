@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const messages: Message[] = historyRows.reverse();
 
-    const systemPrompt = getSystemPrompt();
+    const systemPrompt = getSystemPrompt(dbUserId);
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({

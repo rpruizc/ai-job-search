@@ -35,5 +35,37 @@ export function getDb(): Database.Database {
     db.exec("ALTER TABLE messages ADD COLUMN output_tokens INTEGER");
   }
 
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[];
+  const tableNames = tables.map((t) => t.name);
+  if (!tableNames.includes("profiles")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        section TEXT NOT NULL CHECK (section IN ('identity', 'education', 'experience', 'skills', 'behavioral', 'preferences')),
+        content TEXT NOT NULL DEFAULT '{}',
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(user_id, section)
+      )
+    `);
+  }
+  if (!tableNames.includes("applications")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        company TEXT NOT NULL,
+        role TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'identified' CHECK (status IN ('identified', 'applied', 'interviewing', 'offered', 'rejected', 'accepted', 'withdrawn')),
+        job_posting_text TEXT,
+        cv_path TEXT,
+        cover_letter_path TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  }
+
   return db;
 }

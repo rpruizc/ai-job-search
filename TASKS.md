@@ -188,7 +188,7 @@ Replace the mock echo with real Claude responses. The app becomes a functional A
 
 ## Task #5: Per-User Profile & State Isolation
 
-**Status:** Pending
+**Status:** Done
 **Blocked by:** #2, #4
 
 ### Goal
@@ -209,13 +209,13 @@ Each user gets their own candidate profile, preferences, and tracked application
 - The `/setup` conversation flow populates the profile DB rows (Claude extracts structured data from the conversation and the API route saves it)
 
 ### Tests / Acceptance Criteria
-- [ ] New user with empty profile: Claude prompts them to set up
-- [ ] After setup conversation, profile rows are populated in DB
-- [ ] User A's profile data is never sent to Claude when User B is chatting
-- [ ] `/profile` page shows current profile data
-- [ ] User can edit profile sections from the `/profile` page
-- [ ] `applications` table tracks jobs per user (read by Claude for context)
-- [ ] Deleting an account removes all associated profile and application data
+- [x] New user with empty profile: Claude prompts them to set up
+- [x] After setup conversation, profile rows are populated in DB
+- [x] User A's profile data is never sent to Claude when User B is chatting
+- [x] `/profile` page shows current profile data
+- [x] User can edit profile sections from the `/profile` page
+- [x] `applications` table tracks jobs per user (read by Claude for context)
+- [x] Deleting an account removes all associated profile and application data
 
 ---
 
