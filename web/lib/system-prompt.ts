@@ -21,6 +21,17 @@ const ROLE_PREAMBLE = `You are a career advisor and job application assistant. Y
 
 Be concise, direct, and actionable. When evaluating jobs, use the scoring framework provided. When writing documents, follow the templates and style guidelines.`;
 
+const COMMANDS_INSTRUCTION = `## Available Slash Commands
+
+The user can use these slash commands in the chat:
+
+- \`/scrape <keywords>\` — Search job portals for listings matching the keywords. Optionally filter by portal with \`--portal jobindex,jobbank\`. Results are saved and deduplicated.
+- \`/rank\` — Evaluate and rank unranked scraped jobs against the user's profile. Assigns a 1-10 score and notes to each.
+- \`/apply <url or job text>\` — Start the application workflow: evaluate fit, then help create tailored CV and cover letter.
+- \`/outcome <company> <status>\` — Update an application's status (applied, interviewing, offered, rejected, accepted, withdrawn).
+
+When the user asks about available commands or how to use the system, mention these. Unknown slash commands are treated as regular messages sent to you.`;
+
 const SETUP_INSTRUCTION = `The user has not set up their profile yet. Before you can help effectively, you need to learn about them. Ask them to tell you about themselves — their background, skills, experience, education, what they're looking for, and what matters to them in a role. Extract structured information from their answers and save it to their profile using the /setup flow.
 
 Prompt them naturally: "I'd love to help with your job search! To get started, could you tell me a bit about yourself — your background, current role, key skills, and what kind of positions you're looking for?"`;
@@ -51,17 +62,17 @@ function getBasePrompt(): string {
 export function getSystemPrompt(dbUserId?: number): string {
   const base = getBasePrompt();
 
-  if (dbUserId === undefined) return base;
+  if (dbUserId === undefined) return `${base}\n\n---\n\n${COMMANDS_INSTRUCTION}`;
 
   const profileEmpty = isProfileEmpty(dbUserId);
   if (profileEmpty) {
-    return `${base}\n\n---\n\n${SETUP_INSTRUCTION}`;
+    return `${base}\n\n---\n\n${COMMANDS_INSTRUCTION}\n\n---\n\n${SETUP_INSTRUCTION}`;
   }
 
   const profileContext = formatProfileForPrompt(dbUserId);
   const applicationsContext = formatApplicationsForPrompt(dbUserId);
 
-  const parts = [base];
+  const parts = [base, COMMANDS_INSTRUCTION];
   if (profileContext) parts.push(profileContext);
   if (applicationsContext) parts.push(applicationsContext);
 

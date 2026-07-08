@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { chatStream, Message } from "@/lib/claude";
 import { getSystemPrompt } from "@/lib/system-prompt";
+import { parseCommand, handleCommand } from "@/lib/commands";
 
 const MAX_CONTEXT_MESSAGES = 50;
 
@@ -57,53 +58,102 @@ export async function POST(request: NextRequest) {
 
     const messages: Message[] = historyRows.reverse();
 
-    const systemPrompt = getSystemPrompt(dbUserId);
+    const command = parseCommand(message.trim());
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         let fullContent = "";
 
+        const sendText = (text: string) => {
+          fullContent += text;
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "text", text })}\n\n`)
+          );
+        };
+
+        const sendComplete = (usage: { input_tokens: number; output_tokens: number }) => {
+          const assistantResult = db
+            .prepare(
+              "INSERT INTO messages (conversation_id, role, content, input_tokens, output_tokens) VALUES (?, 'assistant', ?, ?, ?)"
+            )
+            .run(convId, fullContent, usage.input_tokens, usage.output_tokens);
+
+          db.prepare(
+            "UPDATE conversations SET updated_at = datetime('now') WHERE id = ?"
+          ).run(convId);
+
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "done",
+                conversationId: convId,
+                messageId: assistantResult.lastInsertRowid,
+                usage,
+              })}\n\n`
+            )
+          );
+          controller.close();
+        };
+
+        const sendError = (error: Error) => {
+          const errorMessage = error.message?.includes("rate")
+            ? "Please try again in a moment."
+            : "Something went wrong generating a response.";
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: "error", error: errorMessage })}\n\n`)
+          );
+          controller.close();
+        };
+
         try {
+          if (command) {
+            const result = await handleCommand(
+              command,
+              dbUserId,
+              convId as number,
+              messages,
+              sendText,
+              sendComplete,
+              sendError
+            );
+
+            if (result.handled) {
+              if (!result.stream) {
+                // Command completed synchronously - save and close
+                const assistantResult = db
+                  .prepare(
+                    "INSERT INTO messages (conversation_id, role, content, input_tokens, output_tokens) VALUES (?, 'assistant', ?, 0, 0)"
+                  )
+                  .run(convId, fullContent);
+
+                db.prepare(
+                  "UPDATE conversations SET updated_at = datetime('now') WHERE id = ?"
+                ).run(convId);
+
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({
+                      type: "done",
+                      conversationId: convId,
+                      messageId: assistantResult.lastInsertRowid,
+                      usage: { input_tokens: 0, output_tokens: 0 },
+                    })}\n\n`
+                  )
+                );
+                controller.close();
+              }
+              return;
+            }
+          }
+
+          // Not a command (or unrecognized command) - send to Claude
+          const systemPrompt = getSystemPrompt(dbUserId);
+
           await chatStream(messages, { system: systemPrompt }, {
-            onText(text) {
-              fullContent += text;
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: "text", text })}\n\n`)
-              );
-            },
-            onComplete(usage) {
-              const assistantResult = db
-                .prepare(
-                  "INSERT INTO messages (conversation_id, role, content, input_tokens, output_tokens) VALUES (?, 'assistant', ?, ?, ?)"
-                )
-                .run(convId, fullContent, usage.input_tokens, usage.output_tokens);
-
-              db.prepare(
-                "UPDATE conversations SET updated_at = datetime('now') WHERE id = ?"
-              ).run(convId);
-
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({
-                    type: "done",
-                    conversationId: convId,
-                    messageId: assistantResult.lastInsertRowid,
-                    usage,
-                  })}\n\n`
-                )
-              );
-              controller.close();
-            },
-            onError(error) {
-              const errorMessage = error.message?.includes("rate")
-                ? "Please try again in a moment."
-                : "Something went wrong generating a response.";
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: "error", error: errorMessage })}\n\n`)
-              );
-              controller.close();
-            },
+            onText: sendText,
+            onComplete: sendComplete,
+            onError: sendError,
           });
         } catch (error) {
           const msg = error instanceof Error ? error.message : "Unknown error";

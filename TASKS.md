@@ -221,7 +221,7 @@ Each user gets their own candidate profile, preferences, and tracked application
 
 ## Task #6: Slash Commands (/scrape, /apply, /rank, /outcome)
 
-**Status:** Pending
+**Status:** Done
 **Blocked by:** #4, #5
 
 ### Goal
@@ -245,14 +245,14 @@ The real job-search functionality. Slash commands in chat trigger server-side ac
 - The Bun CLI tools are bundled into the Docker image and callable from Node.js via `child_process`
 
 ### Tests / Acceptance Criteria
-- [ ] Typing `/scrape` in chat triggers the scraper and returns job listings
-- [ ] Scraped jobs are stored per-user (User A's scrape doesn't show for User B)
-- [ ] `/apply` with a job URL kicks off the evaluation flow
-- [ ] `/rank` ranks only the current user's unranked scraped jobs
-- [ ] `/outcome` updates the correct application record
-- [ ] Unknown slash commands are passed to Claude as normal messages
-- [ ] Long-running commands (scrape) show a progress indicator
-- [ ] Scraper errors don't crash the server (caught and reported to user)
+- [x] Typing `/scrape` in chat triggers the scraper and returns job listings
+- [x] Scraped jobs are stored per-user (User A's scrape doesn't show for User B)
+- [x] `/apply` with a job URL kicks off the evaluation flow
+- [x] `/rank` ranks only the current user's unranked scraped jobs
+- [x] `/outcome` updates the correct application record
+- [x] Unknown slash commands are passed to Claude as normal messages
+- [x] Long-running commands (scrape) show a progress indicator
+- [x] Scraper errors don't crash the server (caught and reported to user)
 
 ---
 

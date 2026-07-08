@@ -45,3 +45,18 @@ CREATE TABLE IF NOT EXISTS applications (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS scraped_jobs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  portal TEXT NOT NULL,
+  title TEXT NOT NULL,
+  company TEXT,
+  url TEXT,
+  location TEXT,
+  snippet TEXT,
+  scraped_at TEXT NOT NULL DEFAULT (datetime('now')),
+  ranked INTEGER NOT NULL DEFAULT 0,
+  rank_score REAL,
+  rank_notes TEXT
+);
