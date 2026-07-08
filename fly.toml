@@ -2,9 +2,11 @@ app = "ai-job-search"
 primary_region = "arn"
 
 [build]
+  dockerfile = "web/Dockerfile"
 
 [env]
   DATABASE_PATH = "/data/app.db"
+  REPO_ROOT = "/app"
 
 [http_service]
   internal_port = 3000
@@ -12,6 +14,13 @@ primary_region = "arn"
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/health"
 
 [[vm]]
   size = "shared-cpu-1x"

@@ -1,0 +1,17 @@
+# Dependencies (reinstalled in Docker)
+web/node_modules
+.agents/skills/*/cli/node_modules
+
+# Local data
+web/data
+web/.next
+web/.env.local
+
+# Git and IDE
+.git
+.gitignore
+*.md
+!web/db/schema.sql
+
+# OS files
+.DS_Store

@@ -4,7 +4,8 @@ import path from "path";
 
 const execFileAsync = promisify(execFile);
 
-const SKILLS_ROOT = path.join(process.cwd(), "..", ".agents", "skills");
+const REPO_ROOT = process.env.REPO_ROOT || path.join(process.cwd(), "..");
+const SKILLS_ROOT = path.join(REPO_ROOT, ".agents", "skills");
 
 export interface ScrapedJob {
   portal: string;

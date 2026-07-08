@@ -3,7 +3,8 @@ import path from "path";
 import { formatProfileForPrompt, isProfileEmpty } from "./profile";
 import { formatApplicationsForPrompt } from "./applications";
 
-const SKILLS_DIR = path.join(process.cwd(), "..", ".claude", "skills", "job-application-assistant");
+const REPO_ROOT = process.env.REPO_ROOT || path.join(process.cwd(), "..");
+const SKILLS_DIR = path.join(REPO_ROOT, ".claude", "skills", "job-application-assistant");
 
 const SKILL_FILES = [
   "01-candidate-profile.md",
