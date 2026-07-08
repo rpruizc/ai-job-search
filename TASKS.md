@@ -297,7 +297,7 @@ The app is live on the internet, accessible via a fly.dev URL, with persistent d
 
 ## Task #8: Rate Limiting & Cost Controls
 
-**Status:** Pending
+**Status:** Done
 **Blocked by:** #4, #5
 
 ### Goal
@@ -320,14 +320,14 @@ Prevent any single user from burning through the API budget. Provide visibility 
 - Env vars: `DAILY_TOKEN_LIMIT`, `ADMIN_USERS`
 
 ### Tests / Acceptance Criteria
-- [ ] User under limit can chat normally
-- [ ] User at limit gets a friendly rejection (not an error)
-- [ ] Limit resets at midnight UTC (new day = fresh budget)
-- [ ] Token counter in UI updates after each message
-- [ ] Admin page shows per-user usage (only accessible to admin users)
-- [ ] Non-admin users get 404 on `/admin`
-- [ ] `DAILY_TOKEN_LIMIT` env var is respected (can be changed without redeploy on Fly via secrets)
-- [ ] Token counting includes both input and output tokens
+- [x] User under limit can chat normally
+- [x] User at limit gets a friendly rejection (not an error)
+- [x] Limit resets at midnight UTC (new day = fresh budget)
+- [x] Token counter in UI updates after each message
+- [x] Admin page shows per-user usage (only accessible to admin users)
+- [x] Non-admin users get 404 on `/admin`
+- [x] `DAILY_TOKEN_LIMIT` env var is respected (can be changed without redeploy on Fly via secrets)
+- [x] Token counting includes both input and output tokens
 
 ---
 

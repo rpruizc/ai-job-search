@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Sidebar } from "./Sidebar";
 import { MessageThread } from "./MessageThread";
 import { ChatInput } from "./ChatInput";
+import { TokenUsage } from "./TokenUsage";
 
 interface Conversation {
   id: number;
@@ -27,6 +28,7 @@ export function ChatClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [usageRefresh, setUsageRefresh] = useState(0);
 
   const fetchConversations = useCallback(async () => {
     const res = await fetch("/api/conversations");
@@ -151,6 +153,7 @@ export function ChatClient() {
                 return updated;
               });
               fetchConversations();
+              setUsageRefresh((n) => n + 1);
             } else if (event.type === "error") {
               setMessages((prev) => {
                 const updated = [...prev];
@@ -207,6 +210,7 @@ export function ChatClient() {
           <h1 className="text-lg font-semibold">AI Job Search</h1>
         </div>
         <div className="flex items-center gap-3">
+          <TokenUsage refreshTrigger={usageRefresh} />
           <Link
             href="/profile"
             className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100"

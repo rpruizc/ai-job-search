@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { chatStream, Message } from "@/lib/claude";
 import { getSystemPrompt } from "@/lib/system-prompt";
 import { parseCommand, handleCommand } from "@/lib/commands";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_CONTEXT_MESSAGES = 50;
 
@@ -23,6 +24,17 @@ export async function POST(request: NextRequest) {
       return new Response(
         JSON.stringify({ error: "AI service is not configured. Please set AWS_BEARER_TOKEN_BEDROCK." }),
         { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const rateLimit = checkRateLimit(dbUserId);
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: "You've reached your daily token limit. Resets at midnight UTC.",
+          rateLimited: true,
+        }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
       );
     }
 
